@@ -6,6 +6,8 @@ The program uses the ALSA library.
 Use option -lasound on compile line.*/
 
 #include "sin_wave.h"
+#include "synth_note.h"
+#include "frequencies.h"
 
 #include </usr/include/alsa/asoundlib.h>
 #include <math.h>
@@ -22,19 +24,23 @@ unsigned short buffer[44100*8];	/*sound data*/
 int main(void)
 {
 
-	int err, f, t, i;
+	int err, i;
 	snd_pcm_t *handle;
 	snd_pcm_sframes_t frames;
 
-	f = 440;
+	// f = 440;
+	// sin_wave wav;
+	// init(&wav, 0.3, 0.0, (float) f);
+	
+	synth_note A;
+	create_note(&A, 9, -1, 0.0);
 
-		
 	for (i = 0; i < 88200; i++) {
 		float t = i / 44100.0;
 		//buffer[t + 44100 * i] = sin(2*PI*f/100)*t*(t^t+(t>>15|1)^(t-1280^t)>>10);
 		// buffer[t + 44100] = floor(1+sin(2*PI*1000*t/44100))*floor(sin(2*PI*f*t/44100));
 		//buffer[t + 44100] *= t*exp(-1*t/44100)/441000;
-		buffer[i + 44100] = floor(sin(2*PI*f*t)) * 10000;
+		buffer[i + 44100] = floor(sample_note(&A, t)) * 10000;
 	}
 
 	err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0);

@@ -21,15 +21,17 @@ void init(sin_wave * wave, float amp, float ph, float freq)
 //fundamental must be 
 void harmonic(sin_wave * overtone, sin_wave * fundamental, int harmonic)
 {
-	overtone->amplitude = fundamental->amplitude / (float) harmonic;
+	overtone->amplitude = fundamental->amplitude * 0.3;
 	overtone->phase = fundamental->phase;
 	overtone->frequency = fundamental->frequency * (float) harmonic;
 }
 
 
-float sample_wave(sin_wave * wave, float time)
+float sample_wave(sin_wave * wave, float t)
 {
 //	printf("time: %f\n", time);
-	return wave->amplitude * sin(2*PI*wave->frequency*time + wave->phase);
+	return wave->amplitude * sin(2*PI*wave->frequency*t + wave->phase);
 }
+
+
 

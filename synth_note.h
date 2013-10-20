@@ -1,5 +1,10 @@
 
 
+#ifndef _SYNTH_NOTE_H_
+#define _SYNTH_NOTE_H_
+
+#include "sin_wave.h"
+
 struct synth_note
 {
 	int num_waves;
@@ -9,7 +14,8 @@ struct synth_note
 	float start_time;
 };
 
-create_note(synth_note * sn, int note, int octave, float start_time);
+void create_note(synth_note * sn, int note, int octave, float start_time);
 
-sample_note(synth_note * sn, float t);
+float sample_note(synth_note * sn, float t);
 
+#endif

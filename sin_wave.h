@@ -22,4 +22,5 @@ void harmonic(sin_wave * overtone, sin_wave * fundamental, int harmonic);
 float sample_wave(sin_wave * wave, float time);
 
 
+
 #endif
