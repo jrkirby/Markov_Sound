@@ -1,9 +1,9 @@
 OFILES= sin_wave.o
 
-all: main
+all: alsa_main
 
-main: main.cpp $(OFILES)
-	g++ main.cpp $(OFILES) -o main -Wall -lSDL2
+alsa_main: alsa_main.cpp $(OFILES)
+	g++ alsa_main.cpp $(OFILES) -o main -Wall -lSDL2
 
 sin_wave: sin_wave.cpp sin_wave.h
 	g++ -c sin_wave.cpp -o sin_wave.o -Wall

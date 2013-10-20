@@ -15,22 +15,12 @@ struct markov_chart
 };
 
 
-markov_row get_markov_row(markov_chart * mc, int in_state)
-{
-	return mc->rows[in_state];
-}
+int evaluate_chart(markov_chart * mc, int in_state);
 
-int evaluate_row(markov_row * mr)
-{
-	markov_row norm = normalized(mr);
-	float random_sample = (rand() / (float)RAND_MAX);
-	float probability_sum = 0.0;
-	for(int i = 0; i < mr->output_states; i++)
-	{
-		probability_sum += norm[i];
-		if(random_sample <= probability_sum)
-		{
-			return i;
-		}
-	}
-}
+markov_row get_markov_row(markov_chart * mc, int in_state);
+
+int evaluate_row(markov_row * mr);
+
+markov_row normalized(markov_row * mr);
+
+void delete_row(markov_row * mr);
