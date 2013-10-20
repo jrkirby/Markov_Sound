@@ -27,7 +27,7 @@ void harmonic(sin_wave * overtone, sin_wave * fundamental, int harmonic)
 }
 
 
-float sample(sin_wave * wave, float time)
+float sample_wave(sin_wave * wave, float time)
 {
 //	printf("time: %f\n", time);
 	return wave->amplitude * sin(2*PI*wave->frequency*time + wave->phase);

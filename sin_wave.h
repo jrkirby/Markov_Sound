@@ -19,7 +19,7 @@ void init(sin_wave * wave, float amp, float ph, float freq);
 void harmonic(sin_wave * overtone, sin_wave * fundamental, int harmonic);
 
 
-float sample(sin_wave * wave, float time);
+float sample_wave(sin_wave * wave, float time);
 
 
 #endif

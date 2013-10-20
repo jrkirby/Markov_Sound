@@ -42,7 +42,7 @@ int evaluate_row(markov_row * mr)
 		}
 	}
 	delete_row(norm);
-	return -1;
+	return -1;	//should not ever happen
 }
 
 markov_row get_markov_row(markov_chart * mc, int in_state)
