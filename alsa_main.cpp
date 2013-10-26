@@ -8,41 +8,52 @@ Use option -lasound on compile line.*/
 #include "sin_wave.h"
 #include "synth_note.h"
 #include "frequencies.h"
+#include "markov.h"
 
 #include </usr/include/alsa/asoundlib.h>
 #include <math.h>
 #include <iostream>
 #include <stdlib.h>
 
+#define NUM_NOTES 100
+
 using namespace std;
 
 static char *device = "default";	/*default playback device */
 snd_output_t *output = NULL;
-unsigned short buffer[44100*8];	/*sound data*/
+unsigned short buffer[44100*8 * NUM_NOTES];	/*sound data*/
 #define PI 3.14159
 
 int main(void)
 {
 
-	int err, i;
+	int err;
 	snd_pcm_t *handle;
 	snd_pcm_sframes_t frames;
 
 	// f = 440;
 	// sin_wave wav;
 	// init(&wav, 0.3, 0.0, (float) f);
+
+
 	
-	synth_note A;
-	create_note(&A, 9, -1, 0.0);
+	synth_note sNote;
 
-	for (i = 0; i < 88200; i++) {
-		float t = i / 44100.0;
-		//buffer[t + 44100 * i] = sin(2*PI*f/100)*t*(t^t+(t>>15|1)^(t-1280^t)>>10);
-		// buffer[t + 44100] = floor(1+sin(2*PI*1000*t/44100))*floor(sin(2*PI*f*t/44100));
-		//buffer[t + 44100] *= t*exp(-1*t/44100)/441000;
-		buffer[i + 44100] = floor(sample_note(&A, t)) * 10000;
+	markov_chart music;
+	read_file(&music, "basic_markov_chart.mc1");
+	int current_note = 0;
+	float current_time = 0.0;
+
+	for(int note = 0; note < NUM_NOTES; note++)
+	{
+		create_note(&sNote, current_note, -1, current_time, 1.0);
+		for (int i = 0; i < 88200; i++) {
+			buffer[i + (44100 * note)] = floor(sample_note(&sNote, current_time)) * 10000;
+			current_time += i / 44100.0;
+		}
+		current_note = evaluate_chart(&music, current_note);
+		destroy_note(&sNote);
 	}
-
 	err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0);
 	if (err < 0) {
 		printf("Playback open error: %s\n", snd_strerror(err));

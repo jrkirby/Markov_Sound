@@ -1,4 +1,6 @@
 
+#ifndef _MARKOV_H_
+#define _MARKOV_H_
 
 struct markov_row
 {
@@ -24,3 +26,8 @@ int evaluate_row(markov_row * mr);
 markov_row normalized(markov_row * mr);
 
 void delete_row(markov_row * mr);
+
+void read_file(markov_chart *mc, char * file_name);
+
+#endif
+
