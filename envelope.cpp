@@ -19,9 +19,8 @@ float sample_envelope(envelope * e, float t)
 	}
 	else
 	{
-		//value = 1.0 * pow(EULERS, -1.0 * pow(2, t - e->attack) / pow(2, e->decay));
-		value = 1.0;
+		value = 1.0 * pow(EULERS, -1.0 * pow(2, t - e->attack) / pow(2, e->decay));
 	}
-	//printf("envelope value: %f,", value);
+//	printf("envelope value: %f\n", value);
 	return value;
 }

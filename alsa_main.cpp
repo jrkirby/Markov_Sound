@@ -15,14 +15,115 @@ Use option -lasound on compile line.*/
 #include <iostream>
 #include <stdlib.h>
 
-#define NUM_NOTES 100
-
 using namespace std;
 
-static char *device = "default";	/*default playback device */
+#define BIG_NUMBER 100000000
+#define SMALLER_NUMBER 10000000
+
+#define NUM_NOTES 100
+#define SAMPLE_FREQUENCY 44100
+
+static char *device = const_cast<char *>("default");	/*default playback device */
 snd_output_t *output = NULL;
-unsigned short buffer[44100*8 * NUM_NOTES];	/*sound data*/
-#define PI 3.14159
+unsigned short buffer[44100*8];	/*sound data*/
+snd_pcm_channel_area_t *areas;
+
+
+static int write_and_poll_loop(snd_pcm_t *handle,
+								play_context * context,
+								snd_pcm_channel_area_t * areas)
+{
+	struct pollfd *ufds;
+	double phase = 0;
+	signed short *ptr;
+	int err, count, cptr, init;
+	count = snd_pcm_poll_descriptors_count (handle);
+	if (count <= 0)
+	{
+		printf("Invalid poll descriptors count\n");
+		return count;
+	}
+	ufds = malloc(sizeof(struct pollfd) * count);
+	if (ufds == NULL)
+	{
+		printf("No enough memory\n");
+		return -ENOMEM;
+	}
+	if ((err = snd_pcm_poll_descriptors(handle, ufds, count)) < 0) 
+	{
+		printf("Unable to obtain poll descriptors for playback: %s\n", snd_strerror(err));
+		return err;
+	}
+	init = 1;
+	while (1)
+	{
+		if (!init)
+		{
+			err = wait_for_poll(handle, ufds, count);
+			if (err < 0)
+			{
+				if (snd_pcm_state(handle) == SND_PCM_STATE_XRUN ||
+					snd_pcm_state(handle) == SND_PCM_STATE_SUSPENDED)
+				{
+					err = snd_pcm_state(handle) == SND_PCM_STATE_XRUN ? -EPIPE : -ESTRPIPE;
+					if (xrun_recovery(handle, err) < 0) {
+						printf("Write error: %s\n", snd_strerror(err));
+						exit(EXIT_FAILURE);
+					}
+					init = 1;
+				} else
+				{
+				printf("Wait for poll failed\n");
+				return err;
+				}
+			}
+		}
+		generate_sine(areas, 0, period_size, &phase);
+		ptr = samples;
+		cptr = period_size;
+		while (cptr > 0)
+		{
+			err = snd_pcm_writei(handle, ptr, cptr);
+			if (err < 0)
+			{
+				if (xrun_recovery(handle, err) < 0)
+				{
+					printf("Write error: %s\n", snd_strerror(err));
+					exit(EXIT_FAILURE);
+				}
+				init = 1;
+				break; /* skip one period */
+			}
+			if (snd_pcm_state(handle) == SND_PCM_STATE_RUNNING)
+				init = 0;
+			ptr += err * channels;
+			cptr -= err;
+			if (cptr == 0)
+				break;
+			/* it is possible, that the initial buffer cannot store */
+			/* all data from the last period, so wait awhile */
+			err = wait_for_poll(handle, ufds, count);
+			if (err < 0)
+			{
+				if (snd_pcm_state(handle) == SND_PCM_STATE_XRUN ||
+					snd_pcm_state(handle) == SND_PCM_STATE_SUSPENDED)
+				{
+					err = snd_pcm_state(handle) == SND_PCM_STATE_XRUN ? -EPIPE : -ESTRPIPE;
+					if (xrun_recovery(handle, err) < 0)
+					{
+						printf("Write error: %s\n", snd_strerror(err));
+						exit(EXIT_FAILURE);
+					}
+					init = 1;
+				} else
+				{
+					printf("Wait for poll failed\n");
+					return err;
+				}
+			}
+		}
+	}
+}
 
 int main(void)
 {
@@ -30,30 +131,20 @@ int main(void)
 	int err;
 	snd_pcm_t *handle;
 	snd_pcm_sframes_t frames;
+	snd_pcm_sframes_t frames_written;
 
 	// f = 440;
 	// sin_wave wav;
 	// init(&wav, 0.3, 0.0, (float) f);
-
-
 	
 	synth_note sNote;
 
 	markov_chart music;
-	read_file(&music, "basic_markov_chart.mc1");
+	read_file(&music, const_cast<char *>("basic_markov_chart.mc1"));
 	int current_note = 0;
 	float current_time = 0.0;
 
-	for(int note = 0; note < NUM_NOTES; note++)
-	{
-		create_note(&sNote, current_note, -1, current_time, 1.0);
-		for (int i = 0; i < 88200; i++) {
-			buffer[i + (44100 * note)] = floor(sample_note(&sNote, current_time)) * 10000;
-			current_time += i / 44100.0;
-		}
-		current_note = evaluate_chart(&music, current_note);
-		destroy_note(&sNote);
-	}
+
 	err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0);
 	if (err < 0) {
 		printf("Playback open error: %s\n", snd_strerror(err));
@@ -69,14 +160,13 @@ int main(void)
 	if (err < 0) {	/* 0.5sec */
 		printf("Playback open error: %s\n", snd_strerror(err));
 		exit(EXIT_FAILURE);
-	}	
-	frames = snd_pcm_writei(handle, buffer, sizeof(buffer)/8);
-	if (frames < 0)
-		frames = snd_pcm_recover(handle, frames, 0);
-	if (frames < 0) {
-			printf("snd_pcm_writei failed: %s\n", snd_strerror(err));
 	}
-	cout << "DONE!" << endl;
-	snd_pcm_close(handle);
+
+	areas = calloc(channels, sizeof(snd_pcm_channel_area_t));
+	if (areas == NULL) {
+		printf("No enough memory\n");
+		exit(EXIT_FAILURE);
+	}
+
 	return 0;
 }

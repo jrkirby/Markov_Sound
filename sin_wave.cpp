@@ -21,7 +21,7 @@ void init(sin_wave * wave, float amp, float ph, float freq)
 //fundamental must be 
 void harmonic(sin_wave * overtone, sin_wave * fundamental, int harmonic)
 {
-	overtone->amplitude = fundamental->amplitude * 0.3;
+	overtone->amplitude = fundamental->amplitude / harmonic * 2.0;
 	overtone->phase = fundamental->phase;
 	overtone->frequency = fundamental->frequency * (float) harmonic;
 }

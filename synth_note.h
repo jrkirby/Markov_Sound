@@ -13,6 +13,7 @@ struct synth_note
 	int note;
 	int octave;
 	float start_time;
+	float end_time;
 	envelope env;
 };
 
